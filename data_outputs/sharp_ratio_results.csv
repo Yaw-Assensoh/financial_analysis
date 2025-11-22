@@ -1,0 +1,7 @@
+"ticker","avg_daily_return_pct","daily_volatility_pct","sharpe_ratio","risk_adjusted_grade"
+"AAPL","0.085","1.770","0.048","FAIR"
+"GOOGL","0.029","0.976","0.030","FAIR"
+"SPY","0.014","0.541","0.025","FAIR"
+"MSFT","0.019","0.810","0.024","FAIR"
+"TSLA","0.035","1.924","0.018","FAIR"
+"AMZN","0.013","1.106","0.012","FAIR"
