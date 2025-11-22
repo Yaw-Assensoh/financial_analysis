@@ -24,4 +24,12 @@ Thumbs.db
 # Logs
 *.log
 
-html
+# Data directories (large files)
+data/raw/
+data/processed/
+.DS_Store
+data/.DS_Store
+notebooks/.DS_Store
+
+*.csv
+*.html
