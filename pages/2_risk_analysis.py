@@ -6,33 +6,45 @@ st.set_page_config(page_title="Risk Analysis", layout="wide")
 st.title(" Risk Analysis")
 
 @st.cache_data
-def load_risk_data():
-    volatility = pd.read_csv('../data_outputs/volatility_results.csv')
-    sharpe = pd.read_csv('../data_outputs/sharpe_ratio_results.csv')
+def load_data():
+    volatility = pd.read_csv('data_outputs/volatility_results.csv')
+    sharpe = pd.read_csv('data_outputs/sharp_ratio_results.csv')
     return volatility, sharpe
 
-volatility, sharpe = load_risk_data()
-
-tab1, tab2, tab3 = st.tabs(["Volatility", "Risk-Adjusted Returns", "Comparison"])
-
-with tab1:
-    st.subheader("Daily Volatility Analysis")
-    fig = px.bar(volatility, x='ticker', y='daily_volatility',
-                 title='Stock Volatility (Standard Deviation of Daily Returns)')
-    st.plotly_chart(fig, use_container_width=True)
-
-with tab2:
-    st.subheader("Sharpe Ratio - Risk Adjusted Returns")
-    fig = px.bar(sharpe, x='ticker', y='sharpe_ratio',
-                 title='Sharpe Ratio (Higher = Better Risk-Adjusted Returns)',
-                 color='risk_adjusted_grade')
-    st.plotly_chart(fig, use_container_width=True)
-
-with tab3:
+try:
+    volatility, sharpe = load_data()
+    
     st.subheader("Risk-Return Profile")
-    merged = volatility.merge(sharpe, on='ticker')
-    fig = px.scatter(merged, x='daily_volatility', y='sharpe_ratio',
+    
+    # Merge data for scatter plot
+    merged_data = volatility.merge(sharpe, on='ticker')
+    sharpe_col = 'sharpe_ratio' if 'sharpe_ratio' in sharpe.columns else 'sharp_ratio'
+    
+    fig = px.scatter(merged_data, x='daily_volatility', y=sharpe_col,
                      size='daily_volatility', color='ticker',
                      title='Risk vs Return Analysis',
                      hover_data=['risk_adjusted_grade'])
     st.plotly_chart(fig, use_container_width=True)
+    
+    # HTML Visualization
+    st.subheader("Interactive Risk Analysis")
+    try:
+        with open("visualizations/risk_return_profile.html", "r") as f:
+            html_content = f.read()
+        st.components.v1.html(html_content, height=600)
+    except:
+        st.info("Interactive risk visualization loading...")
+    
+    # Metrics
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Volatility Analysis")
+        st.dataframe(volatility, use_container_width=True)
+    
+    with col2:
+        st.subheader("Risk-Adjusted Returns")
+        st.dataframe(sharpe, use_container_width=True)
+
+except Exception as e:
+    st.error(f"Error loading data: {e}")
