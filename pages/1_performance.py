@@ -17,7 +17,7 @@ try:
     
     with col1:
         top_performer = performance.loc[performance['total_return_percentage'].idxmax()]
-        st.metric("🏆 Top Performer", top_performer['ticker'], f"{top_performer['total_return_percentage']:.1f}%")
+        st.metric(" Top Performer", top_performer['ticker'], f"{top_performer['total_return_percentage']:.1f}%")
     
     with col2:
         market = performance[performance['ticker'] == 'SPY']['total_return_percentage'].iloc[0]
@@ -25,7 +25,7 @@ try:
     
     with col3:
         outperformers = len(performance[performance['total_return_percentage'] > market])
-        st.metric("🚀 Beat Market", outperformers)
+        st.metric(" Beat Market", outperformers)
     
     with col4:
         avg_return = performance['total_return_percentage'].mean()
