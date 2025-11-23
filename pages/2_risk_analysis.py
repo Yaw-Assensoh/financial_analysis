@@ -2,226 +2,111 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 st.set_page_config(
-    page_title="Correlation Analysis",
+    page_title="Risk Analysis",
     layout="wide"
 )
 
 def main():
-    st.title(" Correlation & Diversification Analysis")
+    st.title("Risk Analysis")
     st.markdown("---")
     
-    st.write("""
-    This section analyzes inter-security correlations and diversification benefits. 
-    Understanding correlation patterns is essential for effective portfolio construction and risk management.
-    """)
+    st.write("Comprehensive risk assessment and volatility analysis for portfolio management.")
     
-    # Generate correlation matrix
-    tickers = ['TSLA', 'GOOGL', 'AMZN', 'MSFT', 'AAPL', 'SPY']
+    # Risk metrics data
+    risk_data = {
+        'Ticker': ['TSLA', 'GOOGL', 'AMZN', 'MSFT', 'AAPL', 'SPY'],
+        'Volatility (%)': [52.3, 28.7, 32.1, 24.5, 26.8, 18.2],
+        'Beta': [2.10, 1.05, 1.04, 0.98, 1.21, 1.00],
+        'Max Drawdown (%)': [-45.2, -28.7, -35.1, -22.4, -31.5, -19.8],
+        'Sharpe Ratio': [0.65, 1.02, 0.79, 1.15, 0.94, 0.82],
+        'VaR (95%)': [-12.3, -6.9, -8.2, -5.8, -7.1, -4.5]
+    }
     
-    # Realistic correlation matrix (based on typical tech stock correlations)
-    correlation_matrix = np.array([
-        [1.00, 0.65, 0.62, 0.58, 0.61, 0.72],  # TSLA
-        [0.65, 1.00, 0.78, 0.75, 0.74, 0.85],  # GOOGL
-        [0.62, 0.78, 1.00, 0.72, 0.70, 0.82],  # AMZN
-        [0.58, 0.75, 0.72, 1.00, 0.68, 0.88],  # MSFT
-        [0.61, 0.74, 0.70, 0.68, 1.00, 0.80],  # AAPL
-        [0.72, 0.85, 0.82, 0.88, 0.80, 1.00]   # SPY
-    ])
+    risk_df = pd.DataFrame(risk_data)
     
-    corr_df = pd.DataFrame(correlation_matrix, index=tickers, columns=tickers)
-    
-    # Correlation Overview
-    st.header(" Correlation Matrix Overview")
-    
-    # Create heatmap
-    fig1, ax = plt.subplots(figsize=(10, 8))
-    
-    mask = np.triu(np.ones_like(corr_df, dtype=bool))
-    cmap = sns.diverging_palette(230, 20, as_cmap=True)
-    
-    sns.heatmap(corr_df, mask=mask, cmap=cmap, vmax=1.0, vmin=0.4, 
-                center=0.7, annot=True, fmt='.2f',
-                square=True, linewidths=0.5, cbar_kws={"shrink": 0.8})
-    
-    ax.set_title('Security Correlation Matrix\n(Daily Returns Correlation)', 
-                 fontweight='bold', fontsize=16, pad=20)
-    plt.tight_layout()
-    st.pyplot(fig1)
-    
-    # Correlation Statistics
-    st.header(" Correlation Statistics & Insights")
-    
-    col1, col2, col3 = st.columns(3)
+    # Key metrics
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        avg_correlation = np.mean(correlation_matrix[np.triu_indices(6, k=1)])
-        st.metric("Average Correlation", f"{avg_correlation:.3f}", "High")
+        avg_vol = risk_df['Volatility (%)'].mean()
+        st.metric("Average Volatility", f"{avg_vol:.1f}%")
     
     with col2:
-        min_correlation = np.min(correlation_matrix[np.triu_indices(6, k=1)])
-        st.metric("Lowest Correlation", f"{min_correlation:.3f}", "TSLA-MSFT")
+        high_beta = risk_df.loc[risk_df['Beta'].idxmax(), 'Ticker']
+        st.metric("Highest Beta", high_beta, "2.10")
     
     with col3:
-        max_correlation = np.max(correlation_matrix[np.triu_indices(6, k=1)])
-        st.metric("Highest Correlation", f"{max_correlation:.3f}", "MSFT-SPY")
+        best_sharpe = risk_df.loc[risk_df['Sharpe Ratio'].idxmax(), 'Ticker']
+        st.metric("Best Risk-Adjusted", best_sharpe, "1.15")
     
-    # Pairwise Correlation Analysis
-    st.header(" Detailed Pairwise Analysis")
+    with col4:
+        worst_dd = risk_df['Max Drawdown (%)'].min()
+        st.metric("Worst Drawdown", f"{worst_dd:.1f}%")
     
-    # Extract pairwise correlations
-    pairs = []
-    correlations = []
+    # Volatility Analysis
+    st.subheader("Volatility Comparison")
     
-    for i in range(len(tickers)):
-        for j in range(i+1, len(tickers)):
-            pairs.append(f"{tickers[i]}-{tickers[j]}")
-            correlations.append(correlation_matrix[i, j])
+    fig, ax = plt.subplots(figsize=(10, 5))
     
-    pair_df = pd.DataFrame({
-        'Pair': pairs,
-        'Correlation': correlations,
-        'Strength': ['Very High' if c > 0.8 else 'High' if c > 0.6 else 'Moderate' for c in correlations]
-    }).sort_values('Correlation', ascending=False)
+    bars = ax.bar(risk_df['Ticker'], risk_df['Volatility (%)'], 
+                 color='steelblue', alpha=0.7)
     
-    # Display top and bottom correlations
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader(" Highest Correlations")
-        st.dataframe(pair_df.head(6), use_container_width=True, hide_index=True)
-    
-    with col2:
-        st.subheader(" Lowest Correlations")
-        st.dataframe(pair_df.tail(6), use_container_width=True, hide_index=True)
-    
-    # Correlation Distribution
-    st.header(" Correlation Distribution Analysis")
-    
-    fig2, ax = plt.subplots(figsize=(12, 6))
-    
-    # Plot correlation distribution
-    upper_triangular = correlation_matrix[np.triu_indices(6, k=1)]
-    
-    ax.hist(upper_triangular, bins=10, alpha=0.7, color='skyblue', edgecolor='black')
-    ax.axvline(np.mean(upper_triangular), color='red', linestyle='--', 
-               linewidth=2, label=f'Mean: {np.mean(upper_triangular):.3f}')
-    
-    ax.set_xlabel('Correlation Coefficient', fontweight='bold')
-    ax.set_ylabel('Frequency', fontweight='bold')
-    ax.set_title('Distribution of Pairwise Correlations', fontweight='bold', fontsize=14)
+    ax.axhline(y=18.2, color='red', linestyle='--', label='Market Volatility')
+    ax.set_ylabel('Annual Volatility (%)')
+    ax.set_title('Historical Volatility Analysis')
     ax.legend()
     ax.grid(True, alpha=0.3)
     
-    plt.tight_layout()
+    for bar in bars:
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, height + 1,
+                f'{height:.1f}%', ha='center', va='bottom')
+    
+    st.pyplot(fig)
+    
+    # Risk-Return Scatter
+    st.subheader("Risk-Return Profile")
+    
+    returns = [343.9, 251.0, 210.4, 158.0, 141.8, 100.0]
+    
+    fig2, ax = plt.subplots(figsize=(10, 6))
+    
+    scatter = ax.scatter(risk_df['Volatility (%)'], returns, 
+                        s=risk_df['Beta'] * 100, alpha=0.7)
+    
+    for i, ticker in enumerate(risk_df['Ticker']):
+        ax.annotate(ticker, (risk_df['Volatility (%)'][i], returns[i]),
+                   xytext=(5, 5), textcoords='offset points')
+    
+    ax.set_xlabel('Volatility (%)')
+    ax.set_ylabel('Total Return (%)')
+    ax.set_title('Risk-Return Analysis')
+    ax.grid(True, alpha=0.3)
+    
     st.pyplot(fig2)
     
-    # Diversification Benefits
-    st.header("🎯 Diversification Analysis")
+    # Detailed Metrics Table
+    st.subheader("Risk Metrics Table")
+    st.dataframe(risk_df, use_container_width=True, hide_index=True)
     
-    diversification_metrics = {
-        'Ticker': tickers,
-        'Avg Correlation with Peers': [np.mean([correlation_matrix[i, j] for j in range(6) if j != i]) 
-                                      for i in range(6)],
-        'Diversification Score': [1 - np.mean([correlation_matrix[i, j] for j in range(6) if j != i]) 
-                                for i in range(6)],
-        'Market Correlation': [correlation_matrix[i, 5] for i in range(6)]  # SPY is index 5
-    }
+    # Risk Insights
+    st.subheader("Risk Assessment")
     
-    div_df = pd.DataFrame(diversification_metrics)
+    col1, col2 = st.columns(2)
     
-    fig3, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    with col1:
+        st.write("**Lower Risk Profile:**")
+        st.write("- MSFT: Strong risk-adjusted returns")
+        st.write("- GOOGL: Moderate volatility with good returns")
+        st.write("- SPY: Market-level risk characteristics")
     
-    # Diversification Score
-    colors_div = ['green' if score > 0.35 else 'orange' for score in div_df['Diversification Score']]
-    bars1 = ax1.bar(div_df['Ticker'], div_df['Diversification Score'], color=colors_div, alpha=0.8)
-    ax1.set_title('Diversification Score\n(Higher = Better Diversification)', fontweight='bold')
-    ax1.set_ylabel('Diversification Score')
-    ax1.grid(True, alpha=0.3)
-    
-    for bar in bars1:
-        height = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2., height + 0.01,
-                f'{height:.2f}', ha='center', va='bottom', fontweight='bold')
-    
-    # Market Correlation
-    colors_mkt = ['red' if corr > 0.8 else 'orange' for corr in div_df['Market Correlation']]
-    bars2 = ax2.bar(div_df['Ticker'], div_df['Market Correlation'], color=colors_mkt, alpha=0.8)
-    ax2.axhline(y=1.0, color='red', linestyle='--', alpha=0.5, label='Perfect Correlation')
-    ax2.set_title('Correlation with Market (SPY)', fontweight='bold')
-    ax2.set_ylabel('Correlation Coefficient')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-    
-    for bar in bars2:
-        height = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2., height + 0.01,
-                f'{height:.2f}', ha='center', va='bottom', fontweight='bold')
-    
-    plt.tight_layout()
-    st.pyplot(fig3)
-    
-    # Portfolio Construction Insights
-    st.header(" Portfolio Construction Insights")
-    
-    insight_col1, insight_col2 = st.columns(2)
-    
-    with insight_col1:
-        st.success("""
-        **🟢 Diversification Opportunities:**
-        - TSLA shows relatively lower average correlation
-        - Technology subsector variations provide some diversification
-        - Consider adding non-tech assets for better diversification
-        - International exposure could further reduce correlations
-        """)
-    
-    with insight_col2:
-        st.warning("""
-        **🔴 Concentration Risks:**
-        - High overall correlation within technology sector
-        - Strong market beta across all holdings
-        - Limited diversification within current universe
-        - Sector-specific risk remains elevated
-        """)
-    
-    # Advanced Correlation Analysis
-    st.header(" Advanced Correlation Metrics")
-    
-    st.subheader("Correlation Clustering")
-    
-    # Create clustered heatmap
-    fig4, ax = plt.subplots(figsize=(10, 8))
-    
-    g = sns.clustermap(corr_df, cmap=cmap, annot=True, fmt='.2f',
-                      figsize=(10, 8), center=0.7)
-    g.ax_heatmap.set_title('Hierarchically Clustered Correlation Matrix', 
-                          fontweight='bold', fontsize=14, pad=20)
-    
-    st.pyplot(g.fig)
-    
-    # Correlation Strategy Recommendations
-    st.header("🎯 Strategic Recommendations")
-    
-    st.info("""
-    **Portfolio Optimization Strategies:**
-    
-    1. **Diversification Enhancement**:
-       - Add assets with correlation < 0.5 to current holdings
-       - Consider different sectors (Healthcare, Utilities, Consumer Staples)
-       - Explore international markets for geographic diversification
-    
-    2. **Risk Management**:
-       - Monitor correlation changes during market stress
-       - Implement dynamic correlation-based position sizing
-       - Use correlation analysis for hedge ratio calculations
-    
-    3. **Rebalancing Framework**:
-       - Quarterly correlation review and portfolio rebalancing
-       - Correlation threshold-based rebalancing triggers
-       - Sector rotation based on correlation patterns
-    """)
+    with col2:
+        st.write("**Higher Risk Considerations:**")
+        st.write("- TSLA: High volatility and beta")
+        st.write("- AMZN: Significant drawdown potential")
+        st.write("- Sector concentration risk")
 
 if __name__ == "__main__":
     main()
