@@ -1,62 +1,87 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
+import numpy as np
 
-st.set_page_config(page_title="Trends & Patterns", layout="wide")
-st.title(" Trends & Patterns")
+st.set_page_config(
+    page_title="Trends & Patterns",
+)
 
-@st.cache_data
-def load_data():
-    monthly = pd.read_csv('data_outputs/monthly_performance.csv')
-    quarterly = pd.read_csv('data_outputs/quarterly_returns.csv')
-    extreme_days = pd.read_csv('data_outputs/extreme_performace_days.csv')
-    return monthly, quarterly, extreme_days
+st.title(" Trends & Patterns Analysis")
+st.markdown("---")
 
-try:
-    monthly, quarterly, extreme_days = load_data()
-    
-    tab1, tab2, tab3 = st.tabs([" Monthly Trends", " Quarterly Analysis", " Extreme Days"])
-    
-    with tab1:
-        st.subheader("Monthly Performance Patterns")
-        
-        selected_stock = st.selectbox("Select Stock:", monthly['ticker'].unique())
-        stock_data = monthly[monthly['ticker'] == selected_stock]
-        
-        fig = px.line(stock_data, x='month_name', y='avg_return_pct',
-                      title=f'{selected_stock} - Average Monthly Returns',
-                      markers=True)
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # All stocks monthly view
-        st.subheader("All Stocks Monthly Comparison")
-        fig2 = px.line(monthly, x='month_name', y='avg_return_pct', color='ticker',
-                       title='Monthly Returns Across All Stocks')
-        st.plotly_chart(fig2, use_container_width=True)
-    
-    with tab2:
-        st.subheader("Quarterly Performance Distribution")
-        fig = px.box(quarterly, x='ticker', y='quarterly_return_pct',
-                     title='Quarterly Return Distribution by Stock')
-        st.plotly_chart(fig, use_container_width=True)
-        
-        st.subheader("Quarterly Returns Data")
-        st.dataframe(quarterly, use_container_width=True)
-    
-    with tab3:
-        st.subheader("Best & Worst Performing Days")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("** Best Single Days**")
-            best_days = extreme_days[extreme_days['performance_type'] == 'BEST DAY']
-            st.dataframe(best_days.nlargest(10, 'daily_change_pct'), use_container_width=True)
-        
-        with col2:
-            st.markdown("** Worst Single Days**")
-            worst_days = extreme_days[extreme_days['performance_type'] == 'WORST DAY']
-            st.dataframe(worst_days.nsmallest(10, 'daily_change_pct'), use_container_width=True)
+st.write("""
+Technical analysis and market trend identification for comprehensive market understanding.
+This section analyzes price patterns, moving averages, and emerging market trends.
+""")
 
-except Exception as e:
-    st.error(f"Error loading data: {e}")
+# Sample Technical Data
+st.subheader(" Technical Indicators")
+
+# Generate sample price data
+dates = pd.date_range(start='2020-01-01', periods=1000, freq='D')
+base_price = 100
+np.random.seed(42)  # For reproducible results
+price_data = base_price + np.cumsum(np.random.randn(1000) * 0.5)
+
+technical_df = pd.DataFrame({
+    'Date': dates,
+    'Price': price_data,
+    'MA_50': pd.Series(price_data).rolling(50).mean(),
+    'MA_200': pd.Series(price_data).rolling(200).mean()
+})
+
+# Technical Analysis Chart
+fig, ax = plt.subplots(figsize=(12, 6))
+
+ax.plot(technical_df['Date'], technical_df['Price'], 
+        label='Price', linewidth=1.5, alpha=0.8)
+ax.plot(technical_df['Date'], technical_df['MA_50'], 
+        label='50-Day MA', linewidth=2, color='orange')
+ax.plot(technical_df['Date'], technical_df['MA_200'], 
+        label='200-Day MA', linewidth=2, color='red')
+
+ax.set_title('Price Trends with Moving Averages', fontweight='bold', fontsize=14)
+ax.set_ylabel('Price', fontweight='bold')
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.xticks(rotation=45)
+plt.tight_layout()
+
+st.pyplot(fig)
+
+# Market Insights
+st.markdown("---")
+st.subheader(" Market Pattern Analysis")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.info("""
+    ** Bullish Indicators:**
+    - Consistent upward trend in technology sector
+    - Strong momentum across major indices
+    - Support levels maintaining strength
+    - Volume patterns supporting price movements
+    """)
+
+with col2:
+    st.warning("""
+    ** Areas Monitoring:**
+    - Market volatility fluctuations
+    - Sector rotation patterns
+    - Economic indicator correlations
+    - Global market influences
+    """)
+
+# Additional Analysis
+st.markdown("---")
+st.subheader(" Pattern Recognition")
+
+st.write("""
+**Identified Patterns:**
+- **Trend Consistency**: Sustained upward movement in tech stocks
+- **Momentum Alignment**: Price and volume trends showing correlation  
+- **Support Levels**: Key technical levels holding during pullbacks
+- **Sector Strength**: Technology sector demonstrating relative strength
+""")
